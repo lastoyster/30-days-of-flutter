@@ -1,91 +1,86 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 
 void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatefulWidget {
+class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  StreamController<String> streamController = StreamController<String>();
-  late Stream<String> dataStream;
-  TextEditingController textEditingController = TextEditingController();
-
-  @override
-  void initState() {
-    dataStream = streamController.stream.asBroadcastStream();
-    super.initState();
-  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        appBar: AppBar(),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              StreamBuilder<String>(
-                  stream: dataStream,
-                  builder: (context, snapshot) {
-                    if (snapshot.hasData) {
-                      return Text(
-                        snapshot.data ?? 'Null Data',
-                        style: TextStyle(
-                            fontSize: 30, fontWeight: FontWeight.bold),
-                      );
-                    } else {
-                      return Text(
-                        'No Data',
-                        style: TextStyle(
-                            fontSize: 30, fontWeight: FontWeight.bold),
-                      );
-                    }
-                  }),
-              StreamBuilder<String>(
-                  stream: dataStream,
-                  builder: (context, snapshot) {
-                    if (snapshot.hasData) {
-                      return Text(
-                        snapshot.data ?? 'Null Data',
-                        style: TextStyle(
-                            fontSize: 30, fontWeight: FontWeight.bold),
-                      );
-                    } else {
-                      return Text(
-                        'No Data',
-                        style: TextStyle(
-                            fontSize: 30, fontWeight: FontWeight.bold),
-                      );
-                    }
-                  }),
-              const SizedBox(
-                height: 20,
+      theme: ThemeData.light(useMaterial3: true),
+      home: const CopyAndPaste(),
+    );
+  }
+}
+
+class CopyAndPaste extends StatelessWidget {
+  const CopyAndPaste({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final controller1 = TextEditingController();
+    final controller2 = TextEditingController();
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Copy & Paste')),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            SelectableText(
+              'This is a string that you can Select and Copy',
+              style: Theme.of(context)
+                  .textTheme
+                  .headlineMedium!
+                  .copyWith(color: Theme.of(context).colorScheme.primary),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32.0),
+            InkWell(
+              onTap: () {
+                Clipboard.setData(
+                  const ClipboardData(
+                    text: 'This is a string that you can Tap and Copy',
+                  ),
+                );
+              },
+              child: Text(
+                'This is a string that you can Tap and Copy',
+                style: Theme.of(context)
+                    .textTheme
+                    .headlineMedium!
+                    .copyWith(color: Theme.of(context).colorScheme.secondary),
+                textAlign: TextAlign.center,
               ),
-              SizedBox(
-                  width: 200,
-                  child: TextField(
-                    controller: textEditingController,
-                  )),
-              const SizedBox(
-                height: 20,
+            ),
+            const SizedBox(height: 32.0),
+            TextFormField(
+              controller: controller1,
+              decoration: const InputDecoration(
+                hintText: 'Tap here to paste manually',
               ),
-              ElevatedButton(
-                  onPressed: () {
-                    streamController.add(textEditingController.text);
-                  },
-                  child: Text('Done'))
-            ],
-          ),
+            ),
+            const SizedBox(height: 32.0),
+            TextFormField(
+              controller: controller2,
+              decoration: const InputDecoration(
+                hintText: 'Tap here to paste automatically',
+              ),
+              onTap: () async {
+                if (await Clipboard.hasStrings()) {
+                  final data = await Clipboard.getData('text/plain');
+                  final text = data?.text;
+                  if (text != null) {
+                    controller2.text = text;
+                  }
+                }
+              },
+            )
+          ],
         ),
       ),
     );
